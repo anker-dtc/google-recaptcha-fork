@@ -5,11 +5,15 @@ import { Logger } from '@nestjs/common';
 import { Abstract } from '@nestjs/common/interfaces/abstract.interface';
 import { GoogleRecaptchaSiteConfig } from './google-recaptcha-site-config';
 
-export interface GoogleRecaptchaModuleOptions extends GoogleRecaptchaValidatorOptions, GoogleRecaptchaGuardOptions {
+export interface GoogleRecaptchaModuleOptions extends Omit<GoogleRecaptchaValidatorOptions, 'secretKey'>, GoogleRecaptchaGuardOptions {
 	debug?: boolean;
 	logger?: Logger;
 	global?: boolean;
+	// 单站点配置
+	secretKey?: string;
+	// 多站点配置
 	sites?: GoogleRecaptchaSiteConfig[];
+	defaultSite?: string;
 }
 
 export interface GoogleRecaptchaOptionsFactory {

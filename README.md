@@ -1,11 +1,11 @@
-# google-recaptcha
+# google-recaptcha-multisite
 
 Google reCAPTCHA (v2/v3) module for NestJS framework.
 
 ## Installation
 
 ```bash
-npm i guthub.com:anker-dtc/google-recaptcha-fork
+npm i guthub.com:anker-dtc/google-recaptcha-multisite
 ```
 
 ## Quick Start
@@ -29,7 +29,7 @@ GOOGLE_RECAPTCHA_SCORE=0.1
 ### Basic Usage
 
 ```typescript
-import { GoogleRecaptchaModule } from 'google-recaptcha';
+import { GoogleRecaptchaModule } from 'google-recaptcha-multisite';
 
 @Module({
     imports: [

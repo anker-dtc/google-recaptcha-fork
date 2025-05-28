@@ -21,6 +21,12 @@ export class GoogleRecaptchaGuard implements CanActivate {
 		private readonly configRef: RecaptchaConfigRef,
 	) {}
 
+	private resolveLogContext(validator: AbstractGoogleRecaptchaValidator<unknown>): string {
+		return validator instanceof GoogleRecaptchaEnterpriseValidator
+			? GoogleRecaptchaContext.GoogleRecaptchaEnterprise
+			: GoogleRecaptchaContext.GoogleRecaptcha;
+	}
+
 	async canActivate(context: ExecutionContext): Promise<true | never> {
 		const request: LiteralObject = this.requestResolver.resolve(context);
 
@@ -33,7 +39,14 @@ export class GoogleRecaptchaGuard implements CanActivate {
 
 		const options: VerifyResponseDecoratorOptions = this.reflector.get(RECAPTCHA_VALIDATION_OPTIONS, context.getHandler()) || {};
 
-		const siteKey = request.headers['x-recaptcha-sitekey'];
+		// 从请求头或装饰器选项中获取siteKey
+		let siteKey = request.headers['x-recaptcha-sitekey'];
+		if (options.site && this.configRef.valueOf.sites) {
+			const siteConfig = this.configRef.valueOf.sites.find(site => site.name === options.site);
+			if (siteConfig) {
+				siteKey = siteConfig.siteKey;
+			}
+		}
 
 		const [response, remoteIp] = await Promise.all([
 			options?.response ? await options.response(request) : await this.configRef.valueOf.response(request),
@@ -57,11 +70,5 @@ export class GoogleRecaptchaGuard implements CanActivate {
 		}
 
 		throw new GoogleRecaptchaException(request.recaptchaValidationResult.errors);
-	}
-
-	private resolveLogContext(validator: AbstractGoogleRecaptchaValidator<unknown>): GoogleRecaptchaContext {
-		return validator instanceof GoogleRecaptchaEnterpriseValidator
-			? GoogleRecaptchaContext.GoogleRecaptchaEnterprise
-			: GoogleRecaptchaContext.GoogleRecaptcha;
 	}
 }

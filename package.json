@@ -1,5 +1,5 @@
 {
-	"name": "google-recaptcha",
+	"name": "google-recaptcha-multisite",
 	"version": "1.0.0",
 	"description": "Google recaptcha module for NestJS.",
 	"keywords": [

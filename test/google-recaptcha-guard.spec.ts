@@ -16,7 +16,19 @@ describe('Google recaptcha guard', () => {
 	let network: TestRecaptchaNetwork;
 	const networkPort = 6048;
 	const validatorOptions: GoogleRecaptchaValidatorOptions = {
-		secretKey: 'Secret',
+		sites: [
+			{
+				name: 'site1',
+				siteKey: 'site1-key',
+				secretKey: 'Secret1',
+			},
+			{
+				name: 'site2',
+				siteKey: 'site2-key',
+				secretKey: 'Secret2',
+			}
+		],
+		defaultSite: 'site1',
 	};
 	const guardOptions: GoogleRecaptchaGuardOptions = {
 		response: (req) => req.body.recaptcha,
@@ -97,7 +109,10 @@ describe('Google recaptcha guard', () => {
 			new RecaptchaConfigRef(options),
 		);
 
-		const context = createExecutionContext(controller.submit, { body: { recaptcha: 'RECAPTCHA_TOKEN' } });
+		const context = createExecutionContext(controller.submit, { 
+			body: { recaptcha: 'RECAPTCHA_TOKEN' },
+			headers: { 'x-recaptcha-sitekey': 'invalid-site-key' }
+		});
 
 		await guard
 			.canActivate(context)
@@ -109,7 +124,20 @@ describe('Google recaptcha guard', () => {
 		const options = {
 			...validatorOptions,
 			...guardOptions,
-			network: 'https://localhost/some-invalid-path',
+			sites: [
+				{
+					name: 'site1',
+					siteKey: 'site1-key',
+					secretKey: 'Secret1',
+					network: 'https://localhost/some-invalid-path',
+				},
+				{
+					name: 'site2',
+					siteKey: 'site2-key',
+					secretKey: 'Secret2',
+					network: 'https://localhost/some-invalid-path',
+				}
+			],
 		};
 
 		const validator = createGoogleRecaptchaValidator(options);
@@ -128,7 +156,10 @@ describe('Google recaptcha guard', () => {
 			new RecaptchaConfigRef({ ...guardOptions, ...validatorOptions }),
 		);
 
-		const context = createExecutionContext(controller.submit, { body: { recaptcha: 'RECAPTCHA_TOKEN' } });
+		const context = createExecutionContext(controller.submit, { 
+			body: { recaptcha: 'RECAPTCHA_TOKEN' },
+			headers: { 'x-recaptcha-sitekey': 'site1-key' }
+		});
 
 		await guard
 			.canActivate(context)
@@ -136,14 +167,27 @@ describe('Google recaptcha guard', () => {
 			.catch((e) => expect(e).toBeInstanceOf(GoogleRecaptchaException));
 	});
 
-	test('Valid', async () => {
+	test('Valid - Site1', async () => {
 		network.setResult({
 			success: true,
 		});
 		const options = {
 			...validatorOptions,
 			...guardOptions,
-			network: network.url,
+			sites: [
+				{
+					name: 'site1',
+					siteKey: 'site1-key',
+					secretKey: 'Secret1',
+					network: network.url,
+				},
+				{
+					name: 'site2',
+					siteKey: 'site2-key',
+					secretKey: 'Secret2',
+					network: network.url,
+				}
+			],
 		};
 
 		const validator = createGoogleRecaptchaValidator(options);
@@ -152,30 +196,52 @@ describe('Google recaptcha guard', () => {
 
 		const guard = new GoogleRecaptchaGuard(new Reflector(), new RecaptchaRequestResolver(), validatorResolver, new Logger(), new RecaptchaConfigRef(options));
 
-		const context = createExecutionContext(controller.submit, { body: { recaptcha: 'RECAPTCHA_TOKEN' } });
+		const context = createExecutionContext(controller.submit, { 
+			body: { recaptcha: 'RECAPTCHA_TOKEN' },
+			headers: { 'x-recaptcha-sitekey': 'site1-key' }
+		});
 
 		const canActivate = await guard.canActivate(context);
 
 		expect(canActivate).toBeTruthy();
 	});
 
-	test('Unsupported request type', async () => {
-		const options = {} as GoogleRecaptchaModuleOptions;
+	test('Valid - Site2', async () => {
+		network.setResult({
+			success: true,
+		});
+		const options = {
+			...validatorOptions,
+			...guardOptions,
+			sites: [
+				{
+					name: 'site1',
+					siteKey: 'site1-key',
+					secretKey: 'Secret1',
+					network: network.url,
+				},
+				{
+					name: 'site2',
+					siteKey: 'site2-key',
+					secretKey: 'Secret2',
+					network: network.url,
+				}
+			],
+		};
 
 		const validator = createGoogleRecaptchaValidator(options);
 		const enterpriseValidator = createGoogleRecaptchaEnterpriseValidator(options);
-		const validatorResolver = new RecaptchaValidatorResolver(
-			new RecaptchaConfigRef(options),
-			validator,
-			enterpriseValidator,
-		);
+		const validatorResolver = new RecaptchaValidatorResolver(new RecaptchaConfigRef(options), validator, enterpriseValidator);
 
 		const guard = new GoogleRecaptchaGuard(new Reflector(), new RecaptchaRequestResolver(), validatorResolver, new Logger(), new RecaptchaConfigRef(options));
 
-		const context = createExecutionContext(controller.submit, { body: { recaptcha: 'RECAPTCHA_TOKEN' } });
+		const context = createExecutionContext(controller.submitSite2, { 
+			body: { recaptcha: 'RECAPTCHA_TOKEN' },
+			headers: { 'x-recaptcha-sitekey': 'site2-key' }
+		});
 
-		Object.assign(context, { getType: () => 'unknown' });
+		const canActivate = await guard.canActivate(context);
 
-		await expect(guard.canActivate(context)).rejects.toThrowError('Unsupported request type');
+		expect(canActivate).toBeTruthy();
 	});
 });

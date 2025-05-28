@@ -5,6 +5,7 @@ export interface VerifyResponseDecoratorOptions {
 	remoteIp?: RecaptchaRemoteIpProvider;
 	score?: ScoreValidator;
 	action?: string;
+	site?: string;
 }
 
 export interface VerifyResponseOptions {

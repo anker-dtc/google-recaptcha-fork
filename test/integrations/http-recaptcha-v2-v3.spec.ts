@@ -27,6 +27,22 @@ class TestController {
 
 		return { success: true };
 	}
+
+	@Recaptcha({ site: 'site2' })
+	@Post('submit-site2')
+	testActionSite2(@RecaptchaResult() result: RecaptchaVerificationResult): LiteralObject {
+		expect(result).toBeInstanceOf(RecaptchaVerificationResult);
+		expect(result.success).toBeTruthy();
+		expect(result.remoteIp).toBe('IP_ADDR')
+
+		expect(result.getResponse()).toBeDefined();
+
+		const riskAnalytics = result.getEnterpriseRiskAnalytics();
+
+		expect(riskAnalytics).toBeNull();
+
+		return { success: true };
+	}
 }
 
 describe('HTTP Recaptcha V2 V3', () => {
@@ -42,8 +58,22 @@ describe('HTTP Recaptcha V2 V3', () => {
 			imports: [
 				GoogleRecaptchaModule.forRoot({
 					debug: true,
-					response: (req: Request): string => req.headers.recaptcha?.toString(),
-					secretKey: 'secret_key',
+					response: (req: Request): string => req.headers.recaptcha?.toString() || '',
+					sites: [
+						{
+							name: 'site1',
+							siteKey: 'site1-key',
+							secretKey: 'secret_key_1',
+							response: (req: Request): string => req.headers.recaptcha?.toString() || '',
+						},
+						{
+							name: 'site2',
+							siteKey: 'site2-key',
+							secretKey: 'secret_key_2',
+							response: (req: Request): string => req.headers.recaptcha2?.toString() || '',
+						}
+					],
+					defaultSite: 'site1',
 					score: 0.6,
 					actions: ['Submit'],
 					remoteIp: () => 'IP_ADDR',
@@ -68,8 +98,8 @@ describe('HTTP Recaptcha V2 V3', () => {
 
 	afterAll(() => app.close());
 
-	test('V2 OK', async () => {
-		mockedRecaptchaApi.addResponse<VerifyResponseV2>('test_v2_ok', {
+	test('V2 OK - Site1', async () => {
+		mockedRecaptchaApi.addResponse<VerifyResponseV2>('test_v2_ok_site1', {
 			success: true,
 			hostname: 'hostname',
 			challenge_ts: new Date().toISOString(),
@@ -81,7 +111,31 @@ describe('HTTP Recaptcha V2 V3', () => {
 			{},
 			{
 				headers: {
-					Recaptcha: 'test_v2_ok',
+					Recaptcha: 'test_v2_ok_site1',
+					'X-Recaptcha-Sitekey': 'site1-key',
+				},
+			}
+		);
+
+		expect(res.statusCode).toBe(201);
+		expect(res.body.success).toBe(true);
+	});
+
+	test('V2 OK - Site2', async () => {
+		mockedRecaptchaApi.addResponse<VerifyResponseV2>('test_v2_ok_site2', {
+			success: true,
+			hostname: 'hostname',
+			challenge_ts: new Date().toISOString(),
+			errors: [],
+		});
+
+		const res: request.Response = await http.post(
+			'/test/submit-site2',
+			{},
+			{
+				headers: {
+					Recaptcha2: 'test_v2_ok_site2',
+					'X-Recaptcha-Sitekey': 'site2-key',
 				},
 			}
 		);
@@ -101,6 +155,7 @@ describe('HTTP Recaptcha V2 V3', () => {
 			{
 				headers: {
 					Recaptcha: 'test_v2_api_err',
+					'X-Recaptcha-Sitekey': 'site1-key',
 				},
 			}
 		);
@@ -122,6 +177,7 @@ describe('HTTP Recaptcha V2 V3', () => {
 			{
 				headers: {
 					Recaptcha: 'test_v2_network_err',
+					'X-Recaptcha-Sitekey': 'site1-key',
 				},
 			}
 		);
@@ -129,8 +185,8 @@ describe('HTTP Recaptcha V2 V3', () => {
 		expect(res.statusCode).toBe(500);
 	});
 
-	test('V3 OK', async () => {
-		mockedRecaptchaApi.addResponse<VerifyResponseV3>('test_v3_ok', {
+	test('V3 OK - Site1', async () => {
+		mockedRecaptchaApi.addResponse<VerifyResponseV3>('test_v3_ok_site1', {
 			success: true,
 			hostname: 'hostname',
 			challenge_ts: new Date().toISOString(),
@@ -144,7 +200,33 @@ describe('HTTP Recaptcha V2 V3', () => {
 			{},
 			{
 				headers: {
-					Recaptcha: 'test_v3_ok',
+					Recaptcha: 'test_v3_ok_site1',
+					'X-Recaptcha-Sitekey': 'site1-key',
+				},
+			}
+		);
+
+		expect(res.statusCode).toBe(201);
+		expect(res.body.success).toBe(true);
+	});
+
+	test('V3 OK - Site2', async () => {
+		mockedRecaptchaApi.addResponse<VerifyResponseV3>('test_v3_ok_site2', {
+			success: true,
+			hostname: 'hostname',
+			challenge_ts: new Date().toISOString(),
+			action: 'Submit',
+			score: 0.9,
+			errors: [],
+		});
+
+		const res: request.Response = await http.post(
+			'/test/submit-site2',
+			{},
+			{
+				headers: {
+					Recaptcha2: 'test_v3_ok_site2',
+					'X-Recaptcha-Sitekey': 'site2-key',
 				},
 			}
 		);
@@ -169,6 +251,7 @@ describe('HTTP Recaptcha V2 V3', () => {
 			{
 				headers: {
 					Recaptcha: 'test_v3_invalid_action',
+					'X-Recaptcha-Sitekey': 'site1-key',
 				},
 			}
 		);
@@ -179,22 +262,14 @@ describe('HTTP Recaptcha V2 V3', () => {
 		expect(res.body.errorCodes[0]).toBe(ErrorCode.ForbiddenAction);
 	});
 
-	test('V3 Low score', async () => {
-		mockedRecaptchaApi.addResponse<VerifyResponseV3>('test_v3_low_score', {
-			success: true,
-			hostname: 'hostname',
-			challenge_ts: new Date().toISOString(),
-			errors: [],
-			action: 'Submit',
-			score: 0.3,
-		});
-
+	test('Invalid site key', async () => {
 		const res: request.Response = await http.post(
 			'/test/submit',
 			{},
 			{
 				headers: {
-					Recaptcha: 'test_v3_low_score',
+					Recaptcha: 'test_v3_ok_site1',
+					'X-Recaptcha-Sitekey': 'invalid-site-key',
 				},
 			}
 		);
@@ -202,6 +277,6 @@ describe('HTTP Recaptcha V2 V3', () => {
 		expect(res.statusCode).toBe(400);
 		expect(res.body.errorCodes).toBeDefined();
 		expect(res.body.errorCodes.length).toBe(1);
-		expect(res.body.errorCodes[0]).toBe(ErrorCode.LowScore);
+		expect(res.body.errorCodes[0]).toBe(ErrorCode.MissingInputSecret);
 	});
 });

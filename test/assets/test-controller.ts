@@ -14,6 +14,11 @@ export class TestController {
 		return;
 	}
 
+	@Recaptcha({ site: 'site2' })
+	submitSite2(): void {
+		return;
+	}
+
 	@SetRecaptchaOptions({ action: 'TestOptions', score: 0.5 })
 	@UseGuards(GoogleRecaptchaGuard)
 	submitWithSetRecaptchaOptionsDecorator(): void {
