@@ -17,8 +17,8 @@ import { RecaptchaConfigRef } from '../../models/recaptcha-config-ref';
 @Injectable()
 export class GoogleRecaptchaValidator extends AbstractGoogleRecaptchaValidator<VerifyResponseV3> {
 	private readonly defaultNetwork = GoogleRecaptchaNetwork.Google;
-
 	private readonly headers = { 'Content-Type': 'application/x-www-form-urlencoded' };
+	private currentSecretKey: string;
 
 	constructor(
 		@Inject(RECAPTCHA_AXIOS_INSTANCE) private readonly axios: AxiosInstance,
@@ -26,6 +26,11 @@ export class GoogleRecaptchaValidator extends AbstractGoogleRecaptchaValidator<V
 		configRef: RecaptchaConfigRef,
 	) {
 		super(configRef);
+		this.currentSecretKey = configRef.valueOf.secretKey;
+	}
+
+	setCurrentSecretKey(secretKey: string): void {
+		this.currentSecretKey = secretKey;
 	}
 
 	/**
@@ -72,7 +77,11 @@ export class GoogleRecaptchaValidator extends AbstractGoogleRecaptchaValidator<V
 	}
 
 	private verifyResponse<T extends VerifyResponseV2>(response: string, remoteIp?: string): Promise<T> {
-		const body = qs.stringify({ secret: this.options.valueOf.secretKey, response, remoteip: remoteIp });
+		const body = qs.stringify({ 
+			secret: this.currentSecretKey,
+			response, 
+			remoteip: remoteIp 
+		});
 		const url = this.options.valueOf.network || this.defaultNetwork;
 
 		const config: axios.AxiosRequestConfig = {

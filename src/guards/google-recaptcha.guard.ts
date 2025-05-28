@@ -31,7 +31,9 @@ export class GoogleRecaptchaGuard implements CanActivate {
 			return true;
 		}
 
-		const options: VerifyResponseDecoratorOptions = this.reflector.get(RECAPTCHA_VALIDATION_OPTIONS, context.getHandler());
+		const options: VerifyResponseDecoratorOptions = this.reflector.get(RECAPTCHA_VALIDATION_OPTIONS, context.getHandler()) || {};
+
+		const siteKey = request.headers['x-recaptcha-sitekey'];
 
 		const [response, remoteIp] = await Promise.all([
 			options?.response ? await options.response(request) : await this.configRef.valueOf.response(request),
@@ -41,7 +43,7 @@ export class GoogleRecaptchaGuard implements CanActivate {
 		const score = options?.score || this.configRef.valueOf.score;
 		const action = options?.action;
 
-		const validator = this.validatorResolver.resolve();
+		const validator = this.validatorResolver.resolve(siteKey);
 
 		request.recaptchaValidationResult = await validator.validate({ response, remoteIp, score, action });
 

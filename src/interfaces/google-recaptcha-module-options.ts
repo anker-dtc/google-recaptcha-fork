@@ -3,11 +3,13 @@ import { GoogleRecaptchaValidatorOptions } from './google-recaptcha-validator-op
 import { ModuleMetadata, Type } from '@nestjs/common/interfaces';
 import { Logger } from '@nestjs/common';
 import { Abstract } from '@nestjs/common/interfaces/abstract.interface';
+import { GoogleRecaptchaSiteConfig } from './google-recaptcha-site-config';
 
 export interface GoogleRecaptchaModuleOptions extends GoogleRecaptchaValidatorOptions, GoogleRecaptchaGuardOptions {
 	debug?: boolean;
 	logger?: Logger;
 	global?: boolean;
+	sites?: GoogleRecaptchaSiteConfig[];
 }
 
 export interface GoogleRecaptchaOptionsFactory {
