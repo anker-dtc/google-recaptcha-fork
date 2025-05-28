@@ -29,7 +29,7 @@ GOOGLE_RECAPTCHA_SCORE=0.1
 ### Basic Usage
 
 ```typescript
-import { GoogleRecaptchaModule } from '@anker-dtc/google-recaptcha';
+import { GoogleRecaptchaModule } from 'google-recaptcha';
 
 @Module({
     imports: [
