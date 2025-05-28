@@ -1,7 +1,6 @@
 # project
 coverage
 .circleci/*
-index.ts
 
 #tests
 dist/test/*
