@@ -5,7 +5,7 @@ Google reCAPTCHA (v2/v3) module for NestJS framework.
 ## Installation
 
 ```bash
-npm i guthub.com:anker-dtc/google-recaptcha-multisite
+npm install github:anker-dtc/google-recaptcha-multisite
 ```
 
 ## Quick Start

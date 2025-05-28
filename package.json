@@ -9,7 +9,8 @@
 		"nestjs recaptcha"
 	],
 	"private": false,
-	"main": "index.js",
+	"main": "dist/index.js",
+	"types": "dist/index.d.ts",
 	"scripts": {
 		"build": "rimraf dist && tsc && cp package.json dist && cp README.md dist && cp LICENSE dist && cp CONTRIBUTING.md dist && cp CHANGELOG.md dist",
 		"format": "prettier \"**/*.ts\" \"**/*.json\" --ignore-path ./.prettierignore --write",
