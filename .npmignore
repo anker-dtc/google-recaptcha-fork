@@ -1,7 +1,5 @@
 # project
 coverage
-src/*
-test/*
 .circleci/*
 index.ts
 
